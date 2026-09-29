@@ -12,3 +12,4 @@ When assisting:
 - Explain unfamiliar commands and concepts instead of silently executing them.
 - Ensure the owner can understand and review any proposed code.
 - Optimize for a useful personal tool first; do not generalize for hypothetical users prematurely.
+- When discussing product scope or architecture, use `docs/hello-interview-principles.md` as a lightweight guide; do not force it onto routine implementation.
