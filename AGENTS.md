@@ -13,3 +13,4 @@ When assisting:
 - Ensure the owner can understand and review any proposed code.
 - Optimize for a useful personal tool first; do not generalize for hypothetical users prematurely.
 - When discussing product scope or architecture, use `docs/hello-interview-principles.md` as a lightweight guide; do not force it onto routine implementation.
+- At the start of a new planning session, read the README, the latest note in `docs/sessions/`, and any relevant note in `docs/explorations/`.
