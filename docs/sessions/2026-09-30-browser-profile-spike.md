@@ -7,75 +7,75 @@ and define the next browser-access spike.
 
 ## What I did
 
-I started with the browser-profile spike from yesterday. I launched Chrome with
-the repository's ignored `.browser-profile/`, logged into LinkedIn manually,
-fully quit Chrome, and reopened the same profile. The LinkedIn session remained
-authenticated.
+Started with the browser profile spike from yesterday.
 
-I then tested whether Cursor's native browser could remove the need to build our
-own authentication and browser-control layer. After one manual LinkedIn login,
-Cursor reused the authenticated browser state across multiple chats. Open tabs
-were scoped to an individual chat, but a new chat could open its own tab and
-reuse the existing authentication.
+Created a Chrome profile inside the repo at `.browser-profile/`, logged into
+LinkedIn manually, fully closed Chrome and reopened it with the same profile.
+Still logged in - so that worked.
 
-From there, I experimented with natural-language browser navigation. Agents
-could navigate from a LinkedIn company URL to its People page, identify people
-with named mutual connections, and open LinkedIn's mutual-connections results
-to resolve a hidden connector.
+Then tried to have a Cursor agent use that profile. Turns out Cursor's native
+browser tool can't be pointed at our own Chrome profile or attached to that
+Chrome window. It opened a separate browser and got the LinkedIn login page.
 
-I turned the observed workflow into the project skill
-`.cursor/skills/find-linkedin-intros/SKILL.md` and tested it four times using
-Grok 4.7 and GPT-5.6 Sol.
+So I tried logging into LinkedIn directly inside Cursor's native browser.
+
+What I learned from that:
+- Cursor seems to maintain its own browser storage / profile for the workspace
+- the LinkedIn login persisted across different Cursor chats
+- an open tab did not persist across chats, but a new chat could open a new tab
+  and still be logged in
+
+At that point I started testing navigation through normal prompts. Given a
+LinkedIn company URL, agents were able to go to the People page, find people
+with mutual connections, and even open LinkedIn's mutual connection results to
+find a name hidden behind "and 1 other."
+
+Turned that workflow into
+`.cursor/skills/find-linkedin-intros/SKILL.md`.
+
+Ran it four times across Grok 4.7 and GPT-5.6 Sol to see how stable the behavior
+was and whether the models approached it differently.
 
 ## Decisions and why
 
-- Use Cursor's native browser for the first personal MVP. It already provides
-  persistent authentication and an agent-browser bridge, so building those
-  layers now would solve a problem the current environment already solves.
-- Keep the dedicated `.browser-profile/` as a completed experiment rather than
-  the active implementation path.
-- Implement the current product as an on-demand Cursor skill instead of a
-  standalone application.
-- Search LinkedIn's recommended People results by default rather than crawling
-  every associated member.
-- Return only actionable paths with named connectors. Ignore unnamed
-  second-degree cards.
-- Always resolve truncated summaries such as `and 1 other` before finishing.
-- Prefer Grok when the skill can make its behavior equivalent because it is much
-  cheaper for this workflow. GPT-5.6 Sol remains a useful quality baseline.
+For now, use Cursor's native browser for the personal MVP.
 
-## What confused or surprised me
+It already gives agents a browser they can control and persists the login across
+chats. Building our own auth + browser control layer right now would mostly be
+rebuilding things Cursor gives us.
 
-- I expected authentication and browser control to require significant custom
-  implementation, but Cursor already handled most of the useful personal
-  workflow.
-- Cursor persists browser authentication state across chats, while individual
-  tabs do not persist across chats.
-- Agents could accomplish the core product behavior from a loosely defined goal
-  with minimal guidance.
-- Model behavior varied. GPT-5.6 Sol resolved the nested third mutual and
-  finished more directly. Grok initially left that connector unresolved and
-  explored unnecessary employee pages.
-- Explicit completion criteria in the skill brought Grok's behavior in line with
-  the desired result.
+The current "product" can just be an on-demand Cursor skill. Not the most
+exciting engineering project lol, but already useful.
 
-## What I learned
+For the actual search behavior:
+- use LinkedIn's recommended People results rather than crawling every employee
+- only return useful paths where we know the connector's name
+- ignore people who show as 2nd degree but don't show who the mutual is
+- if LinkedIn says "and 1 other," go find that person's name before finishing
 
-- A dedicated Chrome user-data directory can preserve a manual LinkedIn login
-  across browser restarts.
-- For the current MVP, Cursor's workspace-scoped browser state is a simpler
-  authentication boundary than a repository-controlled browser profile.
-- Native browser navigation can be slow when a tool returns a large page
-  snapshot. Small DOM/CDP inspections were generally more reliable.
-- A thin, well-specified agent skill can be a useful product implementation when
-  the host environment already supplies the necessary capabilities.
-- Small multi-model evaluations expose underspecified completion criteria. The
-  right first response is to tighten the workflow, not immediately mandate the
-  more expensive model.
+GPT-5.6 Sol did the most desirable workflow on the first try. Grok initially
+left the hidden third mutual unresolved and spent time crawling extra employee
+pages. Added more explicit completion rules to the skill and Grok then produced
+the same useful result.
+
+That matters because Grok is much cheaper for me in Cursor.
+
+## What surprised me
+
+The biggest surprise is how much Cursor already handles natively.
+
+I thought we might need to build the authentication, persisted browser session,
+and agent/browser bridge ourselves. For my current use case, Cursor already
+solves most of that.
+
+Also interesting to see how a small difference in the skill instructions changed
+the cheaper model's behavior.
 
 ## Smallest sensible next step
 
-Use the skill against a few different LinkedIn company pages. Record where the
-workflow breaks or produces unhelpful output, and only then decide whether role
-filtering, ranking, persistence, or repository-controlled automation is the next
-valuable increment.
+Use the skill on a few different companies and see where it breaks or gives
+unhelpful results.
+
+From there, decide whether the next useful thing is role filtering, ranking the
+paths, persistence, or going back toward browser automation that is not tied to
+Cursor.

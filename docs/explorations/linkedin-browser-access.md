@@ -99,11 +99,20 @@ reopening Chrome with the same `--user-data-dir`.
 This proved that a repository-local browser profile can provide persistent
 authentication. It did not provide an agent-browser control bridge.
 
+We also gave a fresh Cursor browser agent the path to `.browser-profile/` and
+asked it to use that authenticated session. Cursor's native browser tools could
+not select a custom user-data directory or attach to the external Chrome
+instance. They opened a separate managed browser and reached LinkedIn's login
+page instead.
+
 ### Cursor native browser
 
 Cursor's native browser solved both persistence and agent access for the current
 personal use case:
 
+- Cursor appears to maintain its own workspace-scoped browser storage or
+  profile. The exact internal implementation is not part of the interface we
+  rely on.
 - A manual LinkedIn login produced workspace-scoped browser authentication state.
 - That authentication state persisted across new Cursor chats.
 - An open browser tab did not carry into a new chat; the new agent opened its own
