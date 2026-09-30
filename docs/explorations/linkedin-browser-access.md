@@ -1,6 +1,6 @@
 # LinkedIn Browser Access Exploration
 
-**Status:** First spike defined but not implemented.
+**Status:** Authentication and navigation spikes completed; Cursor-native MVP selected.
 
 ## Product context
 
@@ -88,8 +88,56 @@ This spike does not need to:
 - Extract or persist LinkedIn data.
 - Prove that the session will remain valid indefinitely.
 
-## Likely follow-up
+## Results
 
-If the first spike succeeds, define a second spike that launches or controls the
-same dedicated profile through a program. Agent navigation and data extraction
-should remain a separate concern so each experiment teaches one thing clearly.
+### Dedicated browser profile
+
+The first spike succeeded. Chrome stored the manually authenticated LinkedIn
+session in `.browser-profile/`, and the session survived fully quitting and
+reopening Chrome with the same `--user-data-dir`.
+
+This proved that a repository-local browser profile can provide persistent
+authentication. It did not provide an agent-browser control bridge.
+
+### Cursor native browser
+
+Cursor's native browser solved both persistence and agent access for the current
+personal use case:
+
+- A manual LinkedIn login produced workspace-scoped browser authentication state.
+- That authentication state persisted across new Cursor chats.
+- An open browser tab did not carry into a new chat; the new agent opened its own
+  tab and reused the existing authentication.
+- Agents could navigate LinkedIn read-only, inspect company People pages, and
+  follow LinkedIn's mutual-connections results.
+
+Browser navigation sometimes waited after the page appeared visually loaded.
+Small DOM/CDP inspections were faster and more reliable than repeatedly
+requesting large accessibility snapshots.
+
+### Skill prototype
+
+The project skill at `.cursor/skills/find-linkedin-intros/SKILL.md` now accepts a
+LinkedIn company URL and uses Cursor's authenticated native browser to return
+named introduction paths.
+
+Four test runs across GPT-5.6 Sol and Grok 4.7 showed that:
+
+- Both models found the same eight recommended people with named mutuals.
+- GPT-5.6 Sol resolved a truncated `and 1 other` mutual summary without extra
+  guidance.
+- Grok initially stopped with the third connector unresolved and spent time
+  crawling additional employee pages.
+- Explicit completion criteria brought Grok's behavior in line with the desired
+  workflow: inspect recommended results, resolve every truncated mutual summary,
+  and ignore second-degree cards without named connectors.
+
+## Current direction
+
+Use Cursor's native browser and the project skill for the first useful personal
+version. The dedicated `.browser-profile/` remains a successful experiment but
+is not needed for the Cursor-first MVP.
+
+Repository-controlled browser automation may become worthwhile later if a real
+need emerges for portability beyond Cursor, deterministic extraction, or deeper
+browser-automation learning.
